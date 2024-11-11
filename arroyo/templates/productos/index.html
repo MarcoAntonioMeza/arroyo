@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% load custom_filters %}
+{% load humanize %}
+
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+    <!-- Sección de la Gráfica -->
+    <div class="row mb-5">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h4 class="card-title text-center">PRODUCTOS MAS VENDIDOS</h4>
+                    <div id="graph-container" class="mt-4">{{ plot|safe }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-5">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <h4 class="card-title text-center">Cantidad de Productos Vendidos por Año</h4>
+                    <table class="table table-hover table-bordered table-dark mt-3">
+                        <thead>
+                            <tr>
+                                <th>Año</th>
+                                {% for producto in top_productos %}
+                                <th>{{ producto }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in cantidad_vendida_por_año %}
+                            <tr>
+                                <td>{{ row.año }}</td> <!-- Asegúrate de que la clave sea 'año' -->
+                                {% for producto in top_productos %}
+                                <td>{{ row|get_item:producto|default:0|intcomma }}</td>
+
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </div>
+        </div>
+        <div class="col-md-1"></div>
+    </div>
+    <div class="row mb-5">
+        <div class="col-md-1"></div>
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h4 class="card-title text-center">Estadísticas Generales por Producto</h4>
+                    <div id="graph-container" class="mt-4">{{ plot_pie | safe }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h4 class="card-title text-center">Estadísticas Generales por Producto</h4>
+                    <table class="table table-hover table-bordered table-dark mt-3">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Total Vendido (kg/piezas)</th>
+                                <th>Estabilidad de demanda</th>
+                                <th>Variabilidad en demanda</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos_estadisticas %}
+                            <tr>
+                                <td>{{ producto.producto }}</td>
+                                <td>{{ producto.total_vendido }}</td>
+                                <td>{{ producto.promedio }}</td>
+                                <td>{{ producto.desviacion_estandar }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+
+
+
+
+    {% for producto, items in productos_data.items %}
+    <div class="row mb-5">
+        <div class="col-md-1"></div>
+
+
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h4 class="card-title text-center">{{ producto }}</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered table-dark mt-3 custom-scroll-table">
+                            <thead class="thead-light">
+                                <tr class="text-center">
+                                    <th>Año</th>
+                                    <th>Mes</th>
+                                    <th>Total Vendido (kg/piezas)</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% load humanize %} <!-- Cargar el módulo humanize -->
+                                {% for item in items %}
+                                <tr class="text-center">
+                                    <td>{{ item.año }}</td>
+                                    <td>{{ item.mes }}</td>
+                                    <td>{{ item.total_vendido|floatformat:2|intcomma }}</td> <!-- Agregar intcomma -->
+
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endfor %}
+
+
+
+
+
+
+
+</div>
+{% endblock %}
