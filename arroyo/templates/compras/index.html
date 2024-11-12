@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard - My App{% endblock %}
+{% block content %}
+
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-10"> 
+<div class="row mb-4">
+    <div class="col-md-6">
+        <!-- Gráfica General de Ventas -->
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> COMPRAS, CREDITOS Y ABONOS</h5>
+                <div id="graph-container" class="mt-3">
+                    {{ plot_total|safe }} <!-- Aquí se inyecta la gráfica -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <!-- Gráfica General de Ventas -->
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> CRECIMIeNTO ANUAL EN COMPRAS, CREDITOS Y ABONOS</h5>
+                <div id="graph-container" class="mt-3">
+                    {{ plot_total_cre|safe }} <!-- Aquí se inyecta la gráfica -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <!-- Gráfica General de Ventas -->
+        <div class="card shadow mb-4">
+            .
+            <div class="card-body">
+                <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> COMPRAS, CREDITOS Y ABONOS EN EL
+                    AÑO {{anio_seleccionado}}</h5>
+
+                <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-4">
+                        <form method="get" action="{{ventas_mes}}">
+                            <div class="form-group">
+                                <label for="yearSelect">Selecciona el año:</label>
+                                <select class="form-control" id="yearSelect" name="year" onchange="this.form.submit()">
+                                    {% for anio in anios %}
+                                    <option value="{{ anio }}" {% if anio == anio_seleccionado %}selected{% endif %}>
+                                        {{ anio }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-4"></div>
+                </div>
+                <div id="graph-container" class="mt-3">
+                    {{ plot_mes|safe }} <!-- Aquí se inyecta la gráfica -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+{% endblock %}

@@ -3,143 +3,93 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<!-- Asegúrate de incluir el CDN de Font Awesome en tu archivo base o en el head de tu HTML -->
-<style>
-    .uppercase {
-        text-transform: uppercase;
-    }
-</style>
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-md-12 text-center">
-            <h1 class="display-4">PESCADOS Y MARISCOS ARROYO</h1>
-            
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-1"></div>
-        <div class="col-md-10">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title"><i class="fas fa-money-bill-wave"></i>Ingresos $ en Ventas</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <strong>Total de ingresos</strong>
-                                    <span>{{ ingresos.ventas.total }}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <strong>Estabilidad de ingresos</strong>
-                                    <span>{{ ingresos.ventas.promedio }}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <strong>Variabilidad en ingresos</strong>
-                                    <span>{{ ingresos.ventas.std }}</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title"><i class="fas fa-money-bill-wave"></i>POR COBRAR</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <strong>Total en creditos</strong>
-                                    <span>{{ ingresos.creditos.total }}</span>
-                                </li>
-                                
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title"><i class="fas fa-money-bill-wave"></i>PAGOS</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <strong>Total de ingresos EN ABONOS</strong>
-                                    <span>{{ ingresos.abonos.total }}</span>
-                                </li>
-                                
-                            </ul>
-                        </div>
+
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-10">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center"><i class="fas fa-money-bill-wave"></i> Ingresos $ en Ventas
+                        </h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Total de ingresos</strong>
+                                <span>{{ ingresos.ventas.total }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Estabilidad de ingresos</strong>
+                                <span>{{ ingresos.ventas.promedio }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Variabilidad en ingresos</strong>
+                                <span>{{ ingresos.ventas.std }}</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
-            
+            <div class="col-md-4">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center"><i class="fas fa-money-bill-wave"></i> POR COBRAR</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Total en creditos</strong>
+                                <span>{{ ingresos.creditos.total }}</span>
+                            </li>
 
-            <!-- Gráfica General de Ventas -->
-            <div class="card shadow mb-4">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-chart-line"></i> Gráfica General de Ingresos en Ventas</h5>
-                    <div id="graph-container" class="mt-3">
-                        {{ ingresos.plot|safe }} <!-- Aquí se inyecta la gráfica -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center"><i class="fas fa-money-bill-wave"></i> PAGOS</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Total de ingresos EN ABONOS</strong>
+                                <span>{{ ingresos.abonos.total }}</span>
+                            </li>
+
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
-        <!--
-        <div class="col-md-6">
-             Resumen de Ventas
-            <div class="card shadow mb-4">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-shopping-cart"></i> Resumen de Ventas</h5>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <strong>Transacciones</strong>
-                            <span>{{ ventas.total }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <strong>Estabilidad de demanda</strong>
-                            <span>{{ ventas.promedio }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <strong>Variabilidad en demanda</strong>
-                            <span>{{ ventas.std }}</span>
-                        </li>
-                    </ul>
+
+
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Gráfica General de Ventas -->
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center "><i class="fas fa-chart-line"></i> Gráfica General de
+                            Ingresos en
+                            Ventas</h5>
+                        <div id="graph-container" class="mt-3">
+                            {{ ingresos.plot|safe }} <!-- Aquí se inyecta la gráfica -->
+                        </div>
+                    </div>
                 </div>
             </div>
-
-             
-            <div class="card shadow mb-4">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-chart-bar"></i> Gráfica General de Total de Ventas</h5>
-                    <div id="graph-container" class="mt-3">
-                        {{ ventas.plot|safe }}
+            <div class="col-md-6">
+                 <!-- Gráfica General de Ventas -->
+                 <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center "><i class="fas fa-chart-line"></i> CRECIMIRNTO ANUAL EN INGRESOS DE VENTAS, ABONOS Y CREDITOS</h5>
+                        <div id="graph-container" class="mt-3">
+                            {{ ingresos.plot_cre|safe }} <!-- Aquí se inyecta la gráfica -->
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-    -->
     </div>
+
 </div>
+
 {% endblock %}
-
-
-<!-- 
-
- <div class="row mb-4"  offset-md-2>
-        <div class="col-md-12 text-center">
-            <h1 class="display-4">Dashboard de Ventas Arroyo</h1>
-            <p class="lead">Un resumen general y detallado de las ventas por año y mes.</p>
-        </div>
-    </div>
-<li class="list-group-item">
-    <strong>Total de Ventas:</strong> {{ all.total }}
-    <span class="text-muted">Transacciones anuales</span>
-</li>
-<li class="list-group-item">
-    <strong>Promedio de Ventas por Mes:</strong> {{ all.promedio }}
-    <span class="text-muted">Estabilidad de demanda</span>
-</li>
-<li class="list-group-item">
-    <strong>Desviación Estándar:</strong> {{ all.desviacion }}
-    <span class="text-muted">Variabilidad en ventas</span>
-</li>-->

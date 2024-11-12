@@ -198,13 +198,16 @@ def vetas_totales():
     detalle_anual = ventas.merge(creditos, on='year', how='outer') \
                           .merge(abonos, on='year', how='outer')
     detalle_anual.columns = ['year', 'ventas', 'creditos', 'abonos']
-    detalle_anual = detalle_anual.fillna(0)
+    detalle_anual['crecimiento_ventas'] = detalle_anual['ventas'].pct_change() * 100
+    detalle_anual['crecimiento_creditos'] = detalle_anual['creditos'].pct_change() * 100
+    detalle_anual['crecimiento_abonos'] = detalle_anual['abonos'].pct_change() * 100
+    detalle_anual.fillna(0, inplace=True)
 
     # Crear la gráfica de barras y líneas de tendencia
     fig = go.Figure()
     for i, (columna, color, nombre) in enumerate(zip(['ventas', 'creditos', 'abonos'], COLORS, ['VENTAS', 'CRÉDITOS', 'PAGOS'])):
-        #color = COLORS[random.randint(0, len(COLORS) - 1)]
-        color = COLORS[i+2]
+        color = COLORS[random.randint(0, len(COLORS) - 1)]
+        #color = COLORS[i+2]
         # Agregar barras
         fig.add_trace(go.Bar(
             x=detalle_anual['year'].astype(str),
@@ -227,7 +230,7 @@ def vetas_totales():
 
     # Configurar el layout
     fig.update_layout(
-        title='Ventas, Créditos y Pagos'.upper(),
+        #title='Ventas, Créditos y Pagos'.upper(),
         xaxis_title='Años',
         yaxis_title='Monto Total en Pesos'.upper(),
         barmode='group',
@@ -252,6 +255,63 @@ def vetas_totales():
     
     # Generar el gráfico HTML
     grafica = plot(fig, include_plotlyjs=True, output_type='div')
+    
+    
+    #====================================================
+    #          CRECIMIENTO
+    #====================================================
+    
+    fig = go.Figure()
+    for i, (columna, color, nombre) in enumerate(zip(['crecimiento_ventas', 'crecimiento_creditos', 'crecimiento_abonos'], COLORS, ['CRECIMIENTO EN VENTAS', 'CRECIMIENTO EN SOLICITUD DE CRÉDITOS', 'CRECIMIENTO EN  ABONOS'])):
+        color = COLORS[random.randint(0, len(COLORS) - 1)]
+        #color = COLORS[i+2]
+        # Agregar barras
+        fig.add_trace(go.Bar(
+            x=detalle_anual['year'].astype(str),
+            y=detalle_anual[columna],
+            marker_color=color,
+            name=nombre,
+            text=detalle_anual[columna].apply(lambda x: f"{x:,.0f} %"),
+            textposition='auto'
+        ))
+        
+        # Agregar línea de tendencia automática de Plotly
+        #fig.add_trace(go.Scatter(
+        #    x=detalle_anual['year'],
+        #    y=detalle_anual[columna],
+        #    mode='lines+markers',
+        #    name='Tendencia',
+        #    line=dict(color='#f8f9fa', width=2),
+        #    marker=dict(size=8, color='#f8f9fa')
+        #))
+
+    # Configurar el layout
+    fig.update_layout(
+        #title='Ventas, Créditos y Pagos'.upper(),
+        xaxis_title='Años',
+        yaxis_title='Monto Total en Pesos'.upper(),
+        barmode='group',
+        xaxis_tickangle=-45,
+        template='plotly_dark',
+        showlegend=True,
+        margin=dict(l=40, r=40, t=60, b=60),
+        font=dict(color='#f8f9fa'),
+        plot_bgcolor='#343a40',
+        paper_bgcolor='#343a40',
+    )
+    
+    # Configurar la leyenda
+    fig.update_layout(legend=dict(
+        font=dict(color='#f8f9fa'),
+        orientation="h",
+        yanchor="top",
+        y=1.1,
+        xanchor="center",
+        x=0.5
+    ))
+    
+    # Generar el gráfico HTML
+    grafica_cre = plot(fig, include_plotlyjs=True, output_type='div')
 
     # Cálculo de medidas de tendencia central para cada categoría
     INGRESOS = {}
@@ -267,6 +327,7 @@ def vetas_totales():
 
     # Agregar el gráfico a la salida de ingresos
     INGRESOS['plot'] = grafica
+    INGRESOS['plot_cre'] = grafica_cre
     
     return {'ingresos': INGRESOS}
 
@@ -274,12 +335,13 @@ def vetas_totales():
 
 
 """
+
 ====================================================
         VENTAS POR PRODUCTO
 ====================================================
 """
 def venta_detalle_producto():
-    TOP = 8
+    TOP = 5
     df_vD = consulta_sql(VENTA_DETALLE)
     df_vD['fecha'] = pd.to_datetime(df_vD['fecha'])
     df_vD['año'] = df_vD['fecha'].dt.year
@@ -396,11 +458,351 @@ def venta_detalle_producto():
 
     return data
 
+"""
+====================================================
+               COMPRAS
+====================================================
+"""
+
+def compras_credito_abonos(anio):
+    
+    df_compras   = consulta_sql(COMPRAS_RPOOVEDOR)
+    df_compras   = add_columns_date_spanish(df_compras)
+    creditos     = consulta_sql(CREDITO_PROVEDOR)
+    creditos     = add_columns_date_spanish(creditos)
+    abonos       = consulta_sql(ABONO_PROVEDOR)
+    abonos       = add_columns_date_spanish(abonos)
+    
+    total_compras = df_compras.groupby('year')['total_compra'].sum().reset_index()
+    total_creditos = creditos.groupby('year')['monto_credito'].sum().reset_index()
+    total_abonos   = abonos.groupby('year')['cantidad'].sum().reset_index()
+    
+    # Unir los DataFrames por la columna 'year'
+    detalle_anual = total_compras.merge(total_creditos, on='year', how='outer') \
+                             .merge(total_abonos, on='year', how='outer')
+              
+    detalle_anual.columns = ['year', 'compras', 'creditos', 'abonos']
+    detalle_anual['crecimiento_compras'] = detalle_anual['compras'].pct_change() * 100
+    detalle_anual['crecimiento_creditos'] = detalle_anual['creditos'].pct_change() * 100
+    detalle_anual['crecimiento_abonos'] = detalle_anual['abonos'].pct_change() * 100
+    detalle_anual.fillna(0, inplace=True)
+    
+    #====================================================
+    #               TOTALES
+    #====================================================
+    # Crear la gráfica de barras y líneas de tendencia
+    fig = go.Figure()
+    for i, (columna, color, nombre) in enumerate(zip(['compras', 'creditos', 'abonos'], COLORS, ['COMPRAS', 'CRÉDITOS', 'PAGOS'])):
+        #color = COLORS[random.randint(0, len(COLORS) - 1)]
+        color = COLORS[i+2]
+        # Agregar barras
+        fig.add_trace(go.Bar(
+            x=detalle_anual['year'].astype(str),
+            y=detalle_anual[columna],
+            marker_color=color,
+            name=nombre,
+            text=detalle_anual[columna].apply(lambda x: f"${x:,.0f}"),
+            textposition='auto'
+        ))
+        
+        
+
+    # Configurar el layout
+    fig.update_layout(
+        #title='Ventas, Créditos y Pagos'.upper(),
+        xaxis_title='Años',
+        yaxis_title='Monto Total en Pesos'.upper(),
+        barmode='group',
+        xaxis_tickangle=-45,
+        template='plotly_dark',
+        showlegend=True,
+        margin=dict(l=40, r=40, t=60, b=60),
+        font=dict(color='#f8f9fa'),
+        plot_bgcolor='#343a40',
+        paper_bgcolor='#343a40',
+    )
+    
+    # Configurar la leyenda
+    fig.update_layout(legend=dict(
+        font=dict(color='#f8f9fa'),
+        orientation="h",
+        yanchor="top",
+        y=1.1,
+        xanchor="center",
+        x=0.5
+    ))
+    # Generar el gráfico HTML
+    grafica = plot(fig, include_plotlyjs=True, output_type='div')
+    
+    #/////////////////////CRECIMIRNTOS/////////////////////
+    fig = go.Figure()
+    for i, (columna, color, nombre) in enumerate(zip(['crecimiento_compras', 'crecimiento_creditos', 'crecimiento_abonos'], COLORS, ['CRECIMIENTO EN COMPRAS', 'CRECIMIENTO ENCRÉDITOS', 'CRECIMIENTO EN PAGOS'])):
+        #color = COLORS[random.randint(0, len(COLORS) - 1)]
+        color = COLORS[i+2]
+        # Agregar barras
+        fig.add_trace(go.Bar(
+            x=detalle_anual['year'].astype(str),
+            y=detalle_anual[columna],
+            marker_color=color,
+            name=nombre,
+            text=detalle_anual[columna].apply(lambda x: f"{x:,.0f} %"),
+            textposition='auto'
+        ))
+        
+        
+
+    # Configurar el layout
+    fig.update_layout(
+        #title='Ventas, Créditos y Pagos'.upper(),
+        xaxis_title='Años',
+        yaxis_title='Monto Total en Pesos'.upper(),
+        barmode='group',
+        xaxis_tickangle=-45,
+        template='plotly_dark',
+        showlegend=True,
+        margin=dict(l=40, r=40, t=60, b=60),
+        font=dict(color='#f8f9fa'),
+        plot_bgcolor='#343a40',
+        paper_bgcolor='#343a40',
+    )
+    
+    # Configurar la leyenda
+    fig.update_layout(legend=dict(
+        font=dict(color='#f8f9fa'),
+        orientation="h",
+        yanchor="top",
+        y=1.1,
+        xanchor="center",
+        x=0.5
+    ))
+    # Generar el gráfico HTML
+    grafica_cre = plot(fig, include_plotlyjs=True, output_type='div')
+   
+    #====================================================
+    #               ANUALES
+    #====================================================
+    COLUMNA_GROUP = 'month'
+    filtro_com = df_compras[df_compras['year'] == anio]
+    compras_mes = filtro_com.groupby(COLUMNA_GROUP)['total_compra'].sum().reset_index()
+    filtro_cre = creditos[creditos['year'] == anio]
+    creditos_mes = filtro_cre.groupby(COLUMNA_GROUP)['monto_credito'].sum().reset_index()
+    filtro_abo = abonos[abonos['year'] == anio]
+    abonos_mes = filtro_abo.groupby(COLUMNA_GROUP)['cantidad'].sum().reset_index()
+    
+    #unir
+    main_mes = compras_mes.merge(creditos_mes, on=COLUMNA_GROUP, how='outer') \
+        .merge(abonos_mes, on=COLUMNA_GROUP, how='outer')
+    main_mes.columns = ['mes', 'compras', 'creditos', 'abonos']
+    main_mes = main_mes.fillna(0)
+    main_mes['mes'] = main_mes['mes'].apply(lambda x: MESES[x - 1])  # Convertir número de mes a nombre
+
+    # Crear la gráfica con barras y líneas de tendencia
+    fig = go.Figure()
+    for i, (columna, color, nombre) in enumerate(zip(['compras', 'creditos', 'abonos'], COLORS, ['COMPRAS', 'CREDITOS', 'ABONOS'])):
+        color = COLORS[i + 1]
+        #color = COLORS[random.randint(0, len(COLORS) - 1)]
+        # Agregar barras
+        fig.add_trace(go.Bar(
+            x=main_mes['mes'],
+            y=main_mes[columna],
+            marker_color=color,
+            name=nombre.upper(),
+            text=main_mes[columna].apply(lambda x: f"${x:,.0f}"),
+            textposition='auto'
+        ))
+        
+        # Agregar línea de tendencia para cada serie
+        fig.add_trace(go.Scatter(
+            x=main_mes['mes'],
+            y=main_mes[columna],
+            mode='lines+markers',
+            line=dict(color=color, dash='dash', width=2),
+            name=f"Tendencia {nombre.lower()}",
+        ))
+
+    # Configurar el layout de la gráfica
+    fig.update_layout(
+        #title=f'Ingresos Mensuales de {anio}'.upper(),
+        xaxis_title='Meses',
+        yaxis_title='Monto Total en Pesos'.upper(),
+        barmode='group',
+        xaxis_tickangle=-45,
+        template='plotly_dark',
+        showlegend=True,
+        margin=dict(l=40, r=40, t=60, b=60),
+        font=dict(color='#f8f9fa'),
+        plot_bgcolor='#343a40',
+        paper_bgcolor='#343a40',
+    )
+    
+    # Configurar la leyenda
+    fig.update_layout(legend=dict(
+        font=dict(color='#f8f9fa'),
+        orientation="h",
+        yanchor="top",
+        y=1.1,
+        xanchor="center",
+        x=0.5
+    ))
+
+    # Generar el gráfico HTML
+    grafica_mes = plot(fig, include_plotlyjs=True, output_type='div')
+    
+    
+    
+    INGRESOS = {'anios': df_compras['year'].unique(),
+        'anio_seleccionado': anio}
+    INGRESOS['plot_total'] = grafica
+    INGRESOS['plot_mes'] = grafica_mes
+    INGRESOS['plot_total_cre'] = grafica_cre
+    
+    
+    
+    return INGRESOS
+    
+    
 
 
+def compras_proveedor_pro(proveedor,date_ini,date_fin):
+    df_cp = consulta_sql(COMPRAS_PROVEDOR)
+    df_cp.fillna(20, inplace=True)
+    df_cp['tipo_medida_product'] = df_cp['tipo_medida_product'].astype(int)
+    df_cp['nombre_product'] = df_cp['nombre_product'].str.upper().str.strip().str.replace('_', ' ')
+    df_cp['nombre_proveedor'] = df_cp['nombre_proveedor'].str.upper().str.strip().str.replace('_', ' ')
+    # Aplicamos la concatenación condicional
+    df_cp['nombre_product'] = df_cp.apply(
+        lambda row: f"{row['nombre_product']} KG" if row['tipo_medida_product'] == 20 else f"{row['nombre_product']} PZS",
+        axis=1
+    )
+    del df_cp['tipo_medida_product']
+    # Asegúrate de que la columna de fecha esté en formato datetime
+    df_cp['fecha'] = pd.to_datetime(df_cp['fecha'])
 
+    # Filtrar las filas que coincidan con el proveedor y el rango de fechas
+    compras_filtradas = df_cp[
+        (df_cp['nombre_proveedor'] == proveedor) &  # Filtrar por nombre del proveedor
+        (df_cp['fecha'] >= date_ini) &          # Filtrar desde la fecha de inicio
+        (df_cp['fecha'] <= date_fin)               # Filtrar hasta la fecha de fin
+    ]
+    
+    resumen_productos = compras_filtradas.groupby('nombre_product').agg(
+    cantidad_total=('cantidad_compra', 'sum'),
+    costo_total=('costo_compra', 'sum')
+    ).reset_index()
+    
+    fig = go.Figure()
+    # Agregar barras para la cantidad total de productos comprados
+    fig.add_trace(go.Bar(
+        x=resumen_productos['nombre_product'],
+        y=resumen_productos['cantidad_total'],
+        name='Cantidad Total comprada en kg/pzs',
+        marker=dict(color=COLORS),
+        text=[f'{v} kg/pzs' for v in resumen_productos['cantidad_total']],
+        #marker_color= COLORS[random.randint(0, len(COLORS) - 1)],
+        textposition='auto',
+       
+    ))
 
+    # Agregar barras para el costo total de los productos comprados
+    #fig.add_trace(go.Bar(
+    #    x=resumen_productos['nombre_product'],
+    #    y=resumen_productos['costo_total'],
+    #    name='Costo Total',
+    #    #marker_color='indianred',
+    #    textposition='auto',
+    #    marker=dict(color=COLORS),
+    #    #marker_color= COLORS[random.randint(0, len(COLORS) - 1)],
+    #))
 
+    # Configurar el diseño del gráfico
+    fig.update_layout(
+        title=f"Compras al proveedor: {proveedor}",
+        xaxis_title="Producto",
+        yaxis_title="Cantidad / Costo",
+        yaxis_tickformat=",", 
+        barmode='group',
+        xaxis_tickangle=-45,
+        template='plotly_dark',
+        showlegend=True,
+        margin=dict(l=40, r=40, t=60, b=60),
+        font=dict(color='#f8f9fa'),
+        plot_bgcolor='#343a40',
+        paper_bgcolor='#343a40',
+    )
+    # Configurar la leyenda
+    fig.update_layout(legend=dict(
+        font=dict(color='#f8f9fa'),
+        orientation="h",
+        yanchor="top",
+        y=1.1,
+        xanchor="center",
+        x=0.5
+    ))
+    plot_productos = plot(fig, include_plotlyjs=True, output_type='div')
+    
+    
+    #=?==========================================
+    #      TOTALES PROVEEDOR
+    #?==========================================
+    df_pr_ = consulta_sql(TOTALES_PROVEEDORES)
+    df_pr_['proveedor'] = df_pr_['proveedor'].str.upper().str.strip().str.replace('_', ' ')
+    filtro = df_pr_[ df_pr_['proveedor'] == proveedor ]
+    valores = [
+        filtro['sum_total_compras'].values[0],
+        filtro['monto_credito'].values[0],
+        filtro['monto_abono'].values[0],
+        filtro['por_pagar'].values[0]
+    ]
+    
+    categorias = ['Total en Compras', 'Monto en Crédito', 'Monto en Abono', 'Por Pagar']
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=categorias,
+        y=valores,
+        text=[f"${v:,.2f}" for v in valores],  # Mostrar valores formateados en texto
+        textposition='auto',
+        marker=dict(color=COLORS),  # Colores para cada barra
+        name="Indicadores"
+    ))
+
+    # Configurar el diseño del gráfico
+    fig.update_layout(
+        title=f"Indicadores del Proveedor: {proveedor}",
+        xaxis_title="Indicador",
+        yaxis_title="Monto (MXN)",
+        yaxis_tickformat=",",  # Formato para miles
+        barmode='group',
+        xaxis_tickangle=-45,
+        template='plotly_dark',
+        showlegend=True,
+        margin=dict(l=40, r=40, t=60, b=60),
+        font=dict(color='#f8f9fa'),
+        plot_bgcolor='#343a40',
+        paper_bgcolor='#343a40',
+    )
+    # Configurar la leyenda
+    fig.update_layout(legend=dict(
+        font=dict(color='#f8f9fa'),
+        orientation="h",
+        yanchor="top",
+        y=1.1,
+        xanchor="center",
+        x=0.5
+    ))
+    
+    
+    plot_totales =  plot(fig, include_plotlyjs=True, output_type='div')
+
+    data = {
+        'totales': {
+            'plot': plot_totales
+        },
+        'productos': {
+            'plot': plot_productos
+        }	
+    }
+    
+    return data
 
 
 

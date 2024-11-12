@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard - My ARROYO{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-10">
+        <form method="get" action="{{ventas_mes}}">
+            <div class="row my-3">
+                <div class="col-md-4">
+
+                    <label for="yearSelect">Selecciona proveedor:</label>
+                    <select class="form-control" id="proveedorSelect" name="proveedor" onchange="this.form.submit()">
+                        {% for prov in provedores_list.lista %}
+                        <option value="{{ prov }}" {% if prov == provedores_list.select %}selected{% endif %}>
+                            {{ prov }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <!-- Campo de fecha de inicio -->
+                    <label for="fechaInicio">Fecha de inicio:</label>
+                    <input type="date" id="fechaInicio" name="fecha_inicio" class="form-control"
+                           value="{{ fecha_inicio }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <!-- Campo de fecha de fin -->
+                    <label for="fechaFin">Fecha de fin:</label>
+                    <input type="date" id="fechaFin" name="fecha_fin" class="form-control"
+                           value="{{ fecha_fin }}">
+                </div>
+                <div class="col-md-2"><button type="submit" class="btn btn-primary mt-2">Filtrar</button></div>
+            </div>
+        </form>
+
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> Gráfica General de Ingresos
+                            en Ventas, pagos y creditos
+                            por
+                            Mes en </h5>
+                        <div id="graph-container" class="mt-3">
+                            <!-- Aquí se inyecta la gráfica -->
+                            {{ compras.totales.plot|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> Gráfica General de Ingresos
+                            en Ventas, pagos y creditos
+                            por
+                            Mes en </h5>
+                        <div id="graph-container" class="mt-3">
+                            <!-- Aquí se inyecta la gráfica -->
+                            {{ compras.productos.plot|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+    </div>
+    <div class="col-md-1"></div>
+
+</div>
+
+{% endblock %}

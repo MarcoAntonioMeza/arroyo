@@ -23,62 +23,117 @@
 
 
 
-    
-    {% block extra_css %}{% endblock %}
+
+
 </head>
 <style>
     .card {
-    background-color: #343a40;
-    /* Fondo de tarjeta oscuro */
-    border: none;
-    border-radius: 12px;
-    transition: transform 0.2s ease-in-out;
-}
+        background-color: #343a40;
+        /* Fondo de tarjeta oscuro */
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    body {
+        background-color: #212529;
+        /* Fondo oscuro */
+        color: #f8f9fa;
+        /* Texto claro */
+        font-family: 'Roboto', sans-serif;
+        text-transform: uppercase;
+    }
 </style>
-<body style="background-color: #212529;
-/* Fondo oscuro */
-color: #f8f9fa;
-/* Texto claro */
-font-family: 'Roboto', sans-serif;
-text-transform: uppercase;">
+
+<body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'ventas_index' %}">ARROYO</a>
+            <!-- Brand -->
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'ventas_index' %}">
+                <i class="fas fa-store me-2"></i> ARROYO
+            </a>
+
+            <!-- Toggle button for mobile view -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                <!-- Left-aligned Links -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'ventas_mes' %}">INGRESOS POR MES</a>
+                        <a class="nav-link" href="{% url 'ventas_mes' %}">
+                            <i class="fas fa-chart-line"></i> Ingresos por Mes
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'producto_detalle' %}">VENTAS DE PRODUCTOS</a>
+                        <a class="nav-link" href="{% url 'producto_detalle' %}">
+                            <i class="fas fa-box"></i> Ventas de Productos
+                        </a>
                     </li>
 
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="comprasDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-box"></i> Compras
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="comprasDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'compras' %}">
+                                    <i class="fas fa-info-circle"></i> Detalles de Compras
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'compras_proveedor' %}">
+                                    <i class="fas fa-chart-bar"></i> Reporte de Compras proveedor
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-truck"></i> Proveedores
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                </ul>
+
+                <!-- Right-aligned Links (e.g., User Profile) -->
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-user-circle"></i> Perfil
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
+
+
     <!-- Main Content -->
     <div class="container-fluid">
-        <div class="row">
-            {% block content %}
-            <!-- Contenido específico de cada vista -->
-            {% endblock %}
+
+        <div class="row mb-4">
+            <div class="col-md-12 text-center">
+                <h1 class="display-4">PESCADOS Y MARISCOS ARROYO</h1>
+
+            </div>
         </div>
 
-
-
+        {% block content %}
+        <!-- Contenido específico de cada vista -->
+        {% endblock %}
     </div>
 
     <!-- Footer -->
     <footer class="footer mt-auto py-3">
         <div class="container">
-            <span>© 2024 <a href="#">My App</a>. Todos los derechos reservados.</span>
+            <span>© 2024 <a href="#">lerco</a>. Todos los derechos reservados.</span>
         </div>
     </footer>
 
