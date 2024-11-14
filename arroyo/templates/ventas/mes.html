@@ -111,6 +111,25 @@
         <div class="col-md-1"></div>
     </div>
 
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+            <!-- Gráfica General de Ventas -->
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> Gráfica de  CRECIMIeNTO ANUAL EN COMPRAS, CREDITOS Y ABONOS
+                        por
+                        Mes en {{anio_seleccionado}}</h5>
+                    <div id="graph-container" class="mt-3">
+                        <!-- Aquí se inyecta la gráfica -->
+                        {{ ingresos.plot_crecimiento|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-1"></div>
+    </div>
+
 
 </div>
 

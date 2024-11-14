@@ -78,14 +78,15 @@ LEFT JOIN
     COMPRAS
 ====================================================
 """
-COMPRAS_RPOOVEDOR = """
+COMPRAS_PROVEDOR_C = """
 SELECT 
 -- COMPRA
 cm.id AS id,
-cm.lat, cm.lng, cm.total AS total_compra,
+-- cm.lat, cm.lng,
+cm.total AS total_compra,
 cm.`status`,
 
--- PROVVEEDOR
+-- PROVEEDOR
 pr.nombre AS proveedor,
 pr.id AS proveedor_id,
 
@@ -105,7 +106,7 @@ CREDITO_PROVEDOR = """
 SELECT
  -- CREDITO 
  c.id AS credito_id,
- c.monto AS monto_credito,
+ round(c.monto,2) AS monto_credito,
  -- COMPRA
  c.compra_id,
  cm.total AS moto_compra, 
@@ -126,17 +127,21 @@ WHERE c.`status` != 20
 
 ABONO_PROVEDOR = """
 SELECT
-ca.id AS credito_abono_id, ca.credito_id,
- ca.cantidad, ca.`status`, ca.token_pay,
+ca.id AS credito_abono_id, 
+ca.credito_id,
+ ca.cantidad,
+ --ca.`status`,
+ -- ca.token_pay,
  c.compra_id,
- cm.proveedor_id,
-c.tipo AS tipo,
-pr.nombre AS proovedor,
+ -- cm.proveedor_id,
+-- c.tipo AS tipo,
+upper(pr.nombre) AS proveedor,
 FROM_UNIXTIME(ca.created_at) AS fecha
 FROM credito_abono AS ca
 JOIN credito AS c ON c.id = ca.credito_id
 JOIN compra AS cm ON cm.id = c.compra_id
 JOIN proveedor AS pr ON pr.id = cm.proveedor_id
+WHERE ca.`status` = 10
  -- WHERE c.tipo = 20;
 """
 
@@ -167,7 +172,7 @@ SELECT
     
     -- PRODUCTO 
     p.id AS id_product, 
-    UPPER(p.nombre) AS nombre_product,
+    p.nombre AS nombre_product,
     -- p.tipo AS tipo_product, 
     p.tipo_medida AS tipo_medida_product,
     -- p.costo AS costo_product, 
@@ -181,7 +186,7 @@ SELECT
     FROM_UNIXTIME(cd.created_at) AS fecha,
     -- PROOVEDOR 
     pr.id AS id_proveedor,
-    UPPER(pr.nombre) AS nombre_proveedor
+    UPPER(pr.nombre) AS proveedor
     
 
 FROM compra_detalle AS cd
@@ -198,12 +203,13 @@ PROOVEDORES_LIST = """
 SELECT 
 pr.id,
 UPPER(pr.nombre) AS proveedor,
-COUNT(cm.proveedor_id) AS total_compras
+-- COUNT(cm.proveedor_id) AS total_compras,
+ROUND(SUM(cm.total),2) AS total_money
 FROM compra AS cm
 JOIN proveedor AS pr ON pr.id = cm.proveedor_id
 WHERE cm.`status` = 40
 GROUP BY cm.proveedor_id
-ORDER BY total_compras DESC 
+ORDER BY total_money DESC 
 """
 
 

@@ -15,6 +15,8 @@ import plotly.graph_objs as go
 from plotly.offline import plot
 import random
 from .sql import *
+pd.options.display.float_format = '{:,.2f}'.format
+
 
 from django.db import connection
 
@@ -92,61 +94,31 @@ def ventas_mes_df(anio):
     # Fusionar los datos mensuales de ventas, créditos y pagos
     data_mensual = data_ventas_mes.merge(data_creditos_mes, on=COLUMNA_GROUP, how='outer') \
                                   .merge(data_abonos_mes, on=COLUMNA_GROUP, how='outer')
-    data_mensual.columns = ['mes', 'ventas', 'creditos', 'pagos']
-    data_mensual = data_mensual.fillna(0)
-    data_mensual['mes'] = data_mensual['mes'].apply(lambda x: MESES[x - 1])  # Convertir número de mes a nombre
-
-    # Crear la gráfica con barras y líneas de tendencia
-    fig = go.Figure()
-    for i, (columna, color, nombre) in enumerate(zip(['ventas', 'creditos', 'pagos'], COLORS, ['Ventas', 'Créditos', 'Pagos'])):
-        color = COLORS[i + 1]
-        # Agregar barras
-        fig.add_trace(go.Bar(
-            x=data_mensual['mes'],
-            y=data_mensual[columna],
-            marker_color=color,
-            name=nombre.upper(),
-            text=data_mensual[columna].apply(lambda x: f"${x:,.0f}"),
-            textposition='auto'
-        ))
-        
-        # Agregar línea de tendencia para cada serie
-        fig.add_trace(go.Scatter(
-            x=data_mensual['mes'],
-            y=data_mensual[columna],
-            mode='lines+markers',
-            line=dict(color=color, dash='dash', width=2),
-            name=f"Tendencia {nombre.lower()}",
-        ))
-
-    # Configurar el layout de la gráfica
-    fig.update_layout(
-        title=f'Ingresos Mensuales de {anio}'.upper(),
-        xaxis_title='Meses',
-        yaxis_title='Monto Total en Pesos'.upper(),
-        barmode='group',
-        xaxis_tickangle=-45,
-        template='plotly_dark',
-        showlegend=True,
-        margin=dict(l=40, r=40, t=60, b=60),
-        font=dict(color='#f8f9fa'),
-        plot_bgcolor='#343a40',
-        paper_bgcolor='#343a40',
-    )
     
-    # Configurar la leyenda
-    fig.update_layout(legend=dict(
-        font=dict(color='#f8f9fa'),
-        orientation="h",
-        yanchor="top",
-        y=1.1,
-        xanchor="center",
-        x=0.5
-    ))
-
-    # Generar el gráfico HTML
-    grafica = plot(fig, include_plotlyjs=True, output_type='div')
-
+    #data_mensual = data_mensual.fillna(0,inplace=True)                              
+    data_mensual.columns = ['mes', 'ventas', 'creditos', 'pagos']
+    #print(data_mensual)
+    data_mensual = data_mensual.fillna(0)
+    data_mensual['cre_ventas'] = data_mensual['ventas'].pct_change().fillna(0) * 100
+    data_mensual['cre_creditos'] = data_mensual['creditos'].pct_change().fillna(0) * 100
+    data_mensual['cre_pagos'] = data_mensual['pagos'].pct_change().fillna(0) * 100
+    
+    data_mensual['mes'] = data_mensual['mes'].apply(lambda x: MESES[x - 1])  # Convertir número de mes a nombre
+    
+    # Crear la gráfica con barras y líneas de tendencia
+    list_columns_df = ['ventas', 'creditos', 'pagos']
+    lis_columns_name = ['Ventas', 'Créditos', 'Pagos']
+    title =""# f'Ingresos Mensuales de {anio}'
+    xlabel = 'Meses'
+    ylabel = 'Monto Total en Pesos'
+    grafica = grafica_plotly(data_mensual,list_columns_df,lis_columns_name,'mes',title,xlabel,ylabel,prefijo_before='$')
+    list_columns_df = ['cre_ventas', 'cre_creditos', 'cre_pagos']
+    lis_columns_name = ['crecimirnto en Ventas', 'crecimiento en Créditos', 'crecimiento en Créditos Pagos']
+    title = ""# f"CRECIMIeNTO ANUAL EN COMPRAS, CREDITOS Y ABONOS en el año {anio}"
+    
+    plot_crecimiento = grafica_plotly(data_mensual,list_columns_df,lis_columns_name,'mes',title,xlabel,ylabel,prefijo_after='%')
+    
+    
     # Cálculo de medidas de tendencia central para cada categoría
     INGRESOS = {}
     for columna in ['ventas', 'creditos', 'pagos']:
@@ -161,6 +133,7 @@ def ventas_mes_df(anio):
 
     # Agregar el gráfico a la salida de ingresos
     INGRESOS['plot'] = grafica
+    INGRESOS['plot_crecimiento'] = plot_crecimiento
     
     # Retornar el diccionario con los ingresos y datos adicionales
     return {
@@ -465,8 +438,7 @@ def venta_detalle_producto():
 """
 
 def compras_credito_abonos(anio):
-    
-    df_compras   = consulta_sql(COMPRAS_RPOOVEDOR)
+    df_compras   = consulta_sql(COMPRAS_PROVEDOR_C)
     df_compras   = add_columns_date_spanish(df_compras)
     creditos     = consulta_sql(CREDITO_PROVEDOR)
     creditos     = add_columns_date_spanish(creditos)
@@ -486,97 +458,25 @@ def compras_credito_abonos(anio):
     detalle_anual['crecimiento_creditos'] = detalle_anual['creditos'].pct_change() * 100
     detalle_anual['crecimiento_abonos'] = detalle_anual['abonos'].pct_change() * 100
     detalle_anual.fillna(0, inplace=True)
+    detalle_anual['year'] = detalle_anual['year'].astype(str)
     
     #====================================================
     #               TOTALES
     #====================================================
     # Crear la gráfica de barras y líneas de tendencia
-    fig = go.Figure()
-    for i, (columna, color, nombre) in enumerate(zip(['compras', 'creditos', 'abonos'], COLORS, ['COMPRAS', 'CRÉDITOS', 'PAGOS'])):
-        #color = COLORS[random.randint(0, len(COLORS) - 1)]
-        color = COLORS[i+2]
-        # Agregar barras
-        fig.add_trace(go.Bar(
-            x=detalle_anual['year'].astype(str),
-            y=detalle_anual[columna],
-            marker_color=color,
-            name=nombre,
-            text=detalle_anual[columna].apply(lambda x: f"${x:,.0f}"),
-            textposition='auto'
-        ))
-        
-        
-
-    # Configurar el layout
-    fig.update_layout(
-        #title='Ventas, Créditos y Pagos'.upper(),
-        xaxis_title='Años',
-        yaxis_title='Monto Total en Pesos'.upper(),
-        barmode='group',
-        xaxis_tickangle=-45,
-        template='plotly_dark',
-        showlegend=True,
-        margin=dict(l=40, r=40, t=60, b=60),
-        font=dict(color='#f8f9fa'),
-        plot_bgcolor='#343a40',
-        paper_bgcolor='#343a40',
-    )
+    list_columns_df = ['compras', 'creditos', 'abonos']
+    lis_columns_name = ['COMPRAS', 'CRÉDITOS', 'PAGOS']
+    title =""# f'Ingresos Mensuales de {anio}'
+    xlabel = 'Años'
+    ylabel = 'Monto Total en Pesos'
+    grafica = grafica_plotly(detalle_anual,list_columns_df,lis_columns_name,'year',title,xlabel,ylabel,prefijo_before='$')
     
-    # Configurar la leyenda
-    fig.update_layout(legend=dict(
-        font=dict(color='#f8f9fa'),
-        orientation="h",
-        yanchor="top",
-        y=1.1,
-        xanchor="center",
-        x=0.5
-    ))
-    # Generar el gráfico HTML
-    grafica = plot(fig, include_plotlyjs=True, output_type='div')
     
     #/////////////////////CRECIMIRNTOS/////////////////////
-    fig = go.Figure()
-    for i, (columna, color, nombre) in enumerate(zip(['crecimiento_compras', 'crecimiento_creditos', 'crecimiento_abonos'], COLORS, ['CRECIMIENTO EN COMPRAS', 'CRECIMIENTO ENCRÉDITOS', 'CRECIMIENTO EN PAGOS'])):
-        #color = COLORS[random.randint(0, len(COLORS) - 1)]
-        color = COLORS[i+2]
-        # Agregar barras
-        fig.add_trace(go.Bar(
-            x=detalle_anual['year'].astype(str),
-            y=detalle_anual[columna],
-            marker_color=color,
-            name=nombre,
-            text=detalle_anual[columna].apply(lambda x: f"{x:,.0f} %"),
-            textposition='auto'
-        ))
-        
-        
-
-    # Configurar el layout
-    fig.update_layout(
-        #title='Ventas, Créditos y Pagos'.upper(),
-        xaxis_title='Años',
-        yaxis_title='Monto Total en Pesos'.upper(),
-        barmode='group',
-        xaxis_tickangle=-45,
-        template='plotly_dark',
-        showlegend=True,
-        margin=dict(l=40, r=40, t=60, b=60),
-        font=dict(color='#f8f9fa'),
-        plot_bgcolor='#343a40',
-        paper_bgcolor='#343a40',
-    )
+    list_columns_df = ['crecimiento_compras', 'crecimiento_creditos', 'crecimiento_abonos']
+    lis_columns_name = ['CRECIMIENTO EN COMPRAS', 'CRECIMIENTO ENCRÉDITOS', 'CRECIMIENTO EN PAGOS']
+    grafica_cre = grafica_plotly(detalle_anual,list_columns_df,lis_columns_name,'year',title,xlabel,ylabel,prefijo_after="%")
     
-    # Configurar la leyenda
-    fig.update_layout(legend=dict(
-        font=dict(color='#f8f9fa'),
-        orientation="h",
-        yanchor="top",
-        y=1.1,
-        xanchor="center",
-        x=0.5
-    ))
-    # Generar el gráfico HTML
-    grafica_cre = plot(fig, include_plotlyjs=True, output_type='div')
    
     #====================================================
     #               ANUALES
@@ -596,57 +496,12 @@ def compras_credito_abonos(anio):
     main_mes = main_mes.fillna(0)
     main_mes['mes'] = main_mes['mes'].apply(lambda x: MESES[x - 1])  # Convertir número de mes a nombre
 
-    # Crear la gráfica con barras y líneas de tendencia
-    fig = go.Figure()
-    for i, (columna, color, nombre) in enumerate(zip(['compras', 'creditos', 'abonos'], COLORS, ['COMPRAS', 'CREDITOS', 'ABONOS'])):
-        color = COLORS[i + 1]
-        #color = COLORS[random.randint(0, len(COLORS) - 1)]
-        # Agregar barras
-        fig.add_trace(go.Bar(
-            x=main_mes['mes'],
-            y=main_mes[columna],
-            marker_color=color,
-            name=nombre.upper(),
-            text=main_mes[columna].apply(lambda x: f"${x:,.0f}"),
-            textposition='auto'
-        ))
-        
-        # Agregar línea de tendencia para cada serie
-        fig.add_trace(go.Scatter(
-            x=main_mes['mes'],
-            y=main_mes[columna],
-            mode='lines+markers',
-            line=dict(color=color, dash='dash', width=2),
-            name=f"Tendencia {nombre.lower()}",
-        ))
-
-    # Configurar el layout de la gráfica
-    fig.update_layout(
-        #title=f'Ingresos Mensuales de {anio}'.upper(),
-        xaxis_title='Meses',
-        yaxis_title='Monto Total en Pesos'.upper(),
-        barmode='group',
-        xaxis_tickangle=-45,
-        template='plotly_dark',
-        showlegend=True,
-        margin=dict(l=40, r=40, t=60, b=60),
-        font=dict(color='#f8f9fa'),
-        plot_bgcolor='#343a40',
-        paper_bgcolor='#343a40',
-    )
-    
-    # Configurar la leyenda
-    fig.update_layout(legend=dict(
-        font=dict(color='#f8f9fa'),
-        orientation="h",
-        yanchor="top",
-        y=1.1,
-        xanchor="center",
-        x=0.5
-    ))
-
+    list_columns_df = ['compras', 'creditos', 'abonos']
+    lis_columns_name = ['COMPRAS', 'CRÉDITOS', 'PAGOS']
+    title =""# f'Ingresos Mensuales de {anio}'
+    xlabel = 'MESES'
     # Generar el gráfico HTML
-    grafica_mes = plot(fig, include_plotlyjs=True, output_type='div')
+    grafica_mes = grafica_plotly(main_mes,list_columns_df,lis_columns_name,'mes',title,xlabel,ylabel,prefijo_before='$')
     
     
     
@@ -663,63 +518,105 @@ def compras_credito_abonos(anio):
     
 
 
-def compras_proveedor_pro(proveedor,date_ini,date_fin):
+def compras_proveedor_pro(proveedor_name,date_ini,date_fin):
     df_cp = consulta_sql(COMPRAS_PROVEDOR)
+    
+    dc_ab = consulta_sql(ABONO_PROVEDOR)
+    dc_cr = consulta_sql(CREDITO_PROVEDOR)
+    dc_cpr  = consulta_sql(COMPRAS_PROVEDOR_C)
+    
+    dc_ab['proveedor']  = dc_ab['proveedor'].str.upper().str.strip().str.replace('_', ' ')
+    dc_cr['proveedor']  = dc_cr['proveedor'].str.upper().str.strip().str.replace('_', ' ')
+    dc_cpr['proveedor'] = dc_cpr['proveedor'].str.upper().str.strip().str.replace('_', ' ')
+    
+    dc_ab['fecha'] = pd.to_datetime(dc_ab['fecha'])
+    dc_cr['fecha'] = pd.to_datetime(dc_cr['fecha'])
+    dc_cpr['fecha'] = pd.to_datetime(dc_cpr['fecha'])
+    #FILTROS
+    #ABONOS
+    abonos_gen_fil = dc_ab[
+        (dc_ab['proveedor'] == proveedor_name) &  # Filtrar por nombre del proveedor
+        (dc_ab['fecha'] >= date_ini) &          # Filtrar desde la fecha de inicio
+        (dc_ab['fecha'] <= date_fin)               # Filtrar hasta la fecha de fin
+    ]
+    #creditos
+    credits_gen_fil = dc_cr[
+        (dc_cr['proveedor'] == proveedor_name) &  # Filtrar por nombre del proveedor
+        (dc_cr['fecha'] >= date_ini) &          # Filtrar desde la fecha de inicio
+        (dc_cr['fecha'] <= date_fin)               # Filtrar hasta la fecha de fin
+    ]
+    #COMPRAS 
+    compra_gen_fil = dc_cpr[
+        (dc_cpr['proveedor'] == proveedor_name) &  # Filtrar por nombre del proveedor
+        (dc_cpr['fecha'] >= date_ini) &          # Filtrar desde la fecha de inicio
+        (dc_cpr['fecha'] <= date_fin)               # Filtrar hasta la fecha de fin
+    ]
+    
+    resumen_abono = abonos_gen_fil.groupby('proveedor')['cantidad'].sum().reset_index()
+    print(resumen_abono)
+    resumen_compras = compra_gen_fil.groupby('proveedor')['total_compra'].sum().reset_index()
+    resumen_creditos = credits_gen_fil.groupby('proveedor')['monto_credito'].sum().reset_index()
+    
+    merge = resumen_abono.merge(resumen_compras, on='proveedor', how='outer') \
+        .merge(resumen_creditos, on='proveedor', how='outer')
+    merge.columns = ['proveedor', 'abonos', 'compras', 'creditos']
+    merge.fillna(0)
+    #merge['adeudo'] = merge['creditos'] - merge['abonos'] 
+    xlabel = 'indicador'
+    ylabel = 'monto'
+    plot_totales_filtro = grafica_plotly(merge,['compras','creditos','abonos'],['COMPRAS','CRÉDITOS','abonos'],'proveedor',f'Resumen de {proveedor_name}',xlabel,ylabel,prefijo_before='$',add_trendline=False)
+    #print(merge)
+    
+    
     df_cp.fillna(20, inplace=True)
     df_cp['tipo_medida_product'] = df_cp['tipo_medida_product'].astype(int)
     df_cp['nombre_product'] = df_cp['nombre_product'].str.upper().str.strip().str.replace('_', ' ')
-    df_cp['nombre_proveedor'] = df_cp['nombre_proveedor'].str.upper().str.strip().str.replace('_', ' ')
+    df_cp['proveedor'] = df_cp['proveedor'].str.upper().str.strip().str.replace('_', ' ')
     # Aplicamos la concatenación condicional
     df_cp['nombre_product'] = df_cp.apply(
         lambda row: f"{row['nombre_product']} KG" if row['tipo_medida_product'] == 20 else f"{row['nombre_product']} PZS",
         axis=1
-    )
+    )   
     del df_cp['tipo_medida_product']
     # Asegúrate de que la columna de fecha esté en formato datetime
     df_cp['fecha'] = pd.to_datetime(df_cp['fecha'])
+    
 
     # Filtrar las filas que coincidan con el proveedor y el rango de fechas
     compras_filtradas = df_cp[
-        (df_cp['nombre_proveedor'] == proveedor) &  # Filtrar por nombre del proveedor
+        (df_cp['proveedor'] == proveedor_name) &  # Filtrar por nombre del proveedor
         (df_cp['fecha'] >= date_ini) &          # Filtrar desde la fecha de inicio
         (df_cp['fecha'] <= date_fin)               # Filtrar hasta la fecha de fin
     ]
     
     resumen_productos = compras_filtradas.groupby('nombre_product').agg(
     cantidad_total=('cantidad_compra', 'sum'),
-    costo_total=('costo_compra', 'sum')
-    ).reset_index()
+    #costo_total=('costo_compra', 'sum')
+    ).sort_values(by='cantidad_total', ascending=False).reset_index()
+    #resumen_productos = resumen_productos.sort_values(by='cantidad_total', ascending=False)
     
     fig = go.Figure()
     # Agregar barras para la cantidad total de productos comprados
+    colores_aleatorios = random.choices(COLORS, k=resumen_productos.shape[0])
     fig.add_trace(go.Bar(
         x=resumen_productos['nombre_product'],
         y=resumen_productos['cantidad_total'],
         name='Cantidad Total comprada en kg/pzs',
-        marker=dict(color=COLORS),
+        marker=dict(color=colores_aleatorios),
         text=[f'{v} kg/pzs' for v in resumen_productos['cantidad_total']],
         #marker_color= COLORS[random.randint(0, len(COLORS) - 1)],
         textposition='auto',
        
     ))
 
-    # Agregar barras para el costo total de los productos comprados
-    #fig.add_trace(go.Bar(
-    #    x=resumen_productos['nombre_product'],
-    #    y=resumen_productos['costo_total'],
-    #    name='Costo Total',
-    #    #marker_color='indianred',
-    #    textposition='auto',
-    #    marker=dict(color=COLORS),
-    #    #marker_color= COLORS[random.randint(0, len(COLORS) - 1)],
-    #))
+    
 
     # Configurar el diseño del gráfico
     fig.update_layout(
-        title=f"Compras al proveedor: {proveedor}",
+        title=f"Compras al proveedor: {proveedor_name}",
         xaxis_title="Producto",
-        yaxis_title="Cantidad / Costo",
-        yaxis_tickformat=",", 
+        yaxis_title="Cantidad",
+       yaxis_tickformat=",", 
         barmode='group',
         xaxis_tickangle=-45,
         template='plotly_dark',
@@ -741,12 +638,14 @@ def compras_proveedor_pro(proveedor,date_ini,date_fin):
     plot_productos = plot(fig, include_plotlyjs=True, output_type='div')
     
     
+    
+    
     #=?==========================================
     #      TOTALES PROVEEDOR
     #?==========================================
     df_pr_ = consulta_sql(TOTALES_PROVEEDORES)
     df_pr_['proveedor'] = df_pr_['proveedor'].str.upper().str.strip().str.replace('_', ' ')
-    filtro = df_pr_[ df_pr_['proveedor'] == proveedor ]
+    filtro = df_pr_[ df_pr_['proveedor'] == proveedor_name ]
     valores = [
         filtro['sum_total_compras'].values[0],
         filtro['monto_credito'].values[0],
@@ -767,7 +666,7 @@ def compras_proveedor_pro(proveedor,date_ini,date_fin):
 
     # Configurar el diseño del gráfico
     fig.update_layout(
-        title=f"Indicadores del Proveedor: {proveedor}",
+        title=f"Indicadores del Proveedor: {proveedor_name}",
         xaxis_title="Indicador",
         yaxis_title="Monto (MXN)",
         yaxis_tickformat=",",  # Formato para miles
@@ -795,7 +694,8 @@ def compras_proveedor_pro(proveedor,date_ini,date_fin):
 
     data = {
         'totales': {
-            'plot': plot_totales
+            'plot': plot_totales,
+            'plot_totales': plot_totales_filtro
         },
         'productos': {
             'plot': plot_productos
@@ -813,6 +713,56 @@ def compras_proveedor_pro(proveedor,date_ini,date_fin):
         GRAFICAR
 ==========================================
 """
+
+def grafica_plotly(df,list_columns_df,list_name_columns,xColumnName,title,xLabel,yLabel,add_trendline=True,prefijo_before="",prefijo_after=""):
+    fig = go.Figure()
+    for i, (columna, color, nombre) in enumerate(zip(list_columns_df, COLORS, list_name_columns)):
+        # Agregar barras
+        fig.add_trace(go.Bar(
+            x=df[xColumnName],
+            y=df[columna],
+            marker_color=color,
+            name=nombre.upper(),
+            text=df[columna].apply(lambda x: f"{prefijo_before}{x:,.0f}{prefijo_after}"),
+            textposition='auto'
+        ))
+        if add_trendline:
+            # Agregar línea de tendencia para cada serie
+            fig.add_trace(go.Scatter(
+                x=df[xColumnName],
+                y=df[columna],
+                mode='lines+markers',
+                line=dict(color=color, dash='dash', width=2),
+                name=f"Tendencia {nombre.lower()}",
+            ))
+    # Configurar el layout de la gráfica
+    fig.update_layout(
+        title=title.upper(),
+        xaxis_title=xLabel.upper(),
+        yaxis_title=yLabel.upper(),
+        barmode='group',
+        xaxis_tickangle=-45,
+        template='plotly_dark',
+        showlegend=True,
+        margin=dict(l=40, r=40, t=60, b=60),
+        font=dict(color='#f8f9fa'),
+        plot_bgcolor='#343a40',
+        paper_bgcolor='#343a40',
+    )
+    
+    # Configurar la leyenda
+    fig.update_layout(legend=dict(
+        font=dict(color='#f8f9fa'),
+        orientation="h",
+        yanchor="top",
+        y=1.1,
+        xanchor="center",
+        x=0.5
+    ))
+    
+    return plot(fig, include_plotlyjs=True, output_type='div')
+
+
 
 def draw_plot(x, y, title,xlabel='Año', ylabel='Cantidad',add_trendline=True,cant=3):
     title= title.upper()

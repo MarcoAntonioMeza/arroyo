@@ -36,14 +36,12 @@
         </form>
 
         <div class="row">
-            <div class="col-md-2"></div>
-            <div class="col-md-8">
+            
+            <div class="col-md-12">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-                        <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> Gráfica General de Ingresos
-                            en Ventas, pagos y creditos
-                            por
-                            Mes en </h5>
+                        <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> Gráfica General de compras
+                            creditos  y pagos de lo que va de operacion </h5>
                         <div id="graph-container" class="mt-3">
                             <!-- Aquí se inyecta la gráfica -->
                             {{ compras.totales.plot|safe }}
@@ -51,16 +49,27 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-"></div>
+            <div class="col-md-12">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> Gráfica General de compras
+                            creditos  y pagos
+                            
+                            de {{ fecha_inicio }} al {{ fecha_fin}}</h5>
+                        <div id="graph-container" class="mt-3">
+                            <!-- Aquí se inyecta la gráfica -->
+                            {{ compras.totales.plot_totales|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
         </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-                        <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> Gráfica General de Ingresos
-                            en Ventas, pagos y creditos
-                            por
-                            Mes en </h5>
+                        <h5 class="card-title text-center"><i class="fas fa-chart-line"></i> Gráfica General de productos comprados de {{ fecha_inicio }} al {{ fecha_fin}} </h5>
                         <div id="graph-container" class="mt-3">
                             <!-- Aquí se inyecta la gráfica -->
                             {{ compras.productos.plot|safe }}
