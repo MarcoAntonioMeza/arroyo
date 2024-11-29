@@ -314,7 +314,7 @@ def vetas_totales():
 ====================================================
 """
 def venta_detalle_producto():
-    TOP = 5
+    TOP = 10
     df_vD = consulta_sql(VENTA_DETALLE)
     df_vD['fecha'] = pd.to_datetime(df_vD['fecha'])
     df_vD['año'] = df_vD['fecha'].dt.year
@@ -705,6 +705,8 @@ def compras_proveedor_pro(proveedor_name,date_ini,date_fin):
     return data
 
 
+def ventas_compra_producto(producto_name,date_ini,date_fin):
+    pass
 
 
 

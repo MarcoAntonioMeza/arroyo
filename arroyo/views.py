@@ -22,6 +22,10 @@ def productos(request):
     data = venta_detalle_producto()
     return render(request, 'productos/index.html',data)
 
+def producto_compra_ventas(request):
+    producto = request.GET.get('producto')
+    data = None #producto_compra_ventas(producto)
+    return render(request, 'productos/producto.html',data)
 
 #================================================================
 #                                   COMPRAS 
@@ -30,6 +34,8 @@ def compras(request):
     year = int(request.GET.get('year',date.today().year))
     data = compras_credito_abonos(year)
     return render(request, 'compras/index.html',data)
+
+
 
 def compras_proveedor(request):
     COUNT_PROV = 200
